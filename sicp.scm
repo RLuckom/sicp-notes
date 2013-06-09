@@ -779,3 +779,66 @@ a
 (balanced? (make-mobile (make-branch 2 4) 
                         (make-branch 2 (make-mobile (make-branch 2 2)
                                                     (make-branch 2 2)))))
+
+(define (square-tree tree)
+  (cond ((null? tree) '())
+        ((not (pair? tree)) (square tree))
+        (else (cons (square-tree (car tree)) 
+                    (square-tree (cdr tree))))))
+
+(square-tree (list 5 (list 5 (list (list 7 8) 6))))
+
+(define (square-tree-map tree)
+  (map (lambda (t) (if (pair? t) (square-tree-map t)
+                     (square t)))
+       tree))
+
+(square-tree-map (list 5 (list 5 (list (list 7 8) 6))))
+
+(define (tree-map f t)
+  (define (tm t)
+    (map (lambda (t) (if (pair? t) (tm t)
+                       (f t)))
+    t))
+  (tm t))
+
+(define (tt tree) (tree-map square tree))
+
+(tt (list 5 (list 5 (list (list 7 8) 6))))
+
+(define (subsets s)
+  (if (null? s) (list '())
+    (let ((rest (subsets (cdr s))))
+      (append rest (map (lambda (l) (append (list (car s)) l)) rest)))))
+
+(subsets (list 1 2 3))
+
+(define (accumulate op init l)
+  (if (null? l) init
+    (op (car l)
+        (accumulate op init (cdr l)))))
+
+(accumulate + 0 (list 1 2 3 4 5))
+
+(define (m f seq)
+  (accumulate (lambda (x y) (cons (f x) y)) '() seq))
+
+(m (lambda (x) (* x x)) (list 1 2 3 4 5))
+
+(define (a seq1 seq2)
+  (accumulate cons seq2 seq1))
+
+(a (list 1 2 3 4) (list 5 6 7 8))
+
+(define (l seq)
+  (accumulate (lambda (x y) (+ y 1)) 0 seq))
+
+(l (list 1 2 3 4 5))
+
+(define (horner-eval x coefficient-sequence)
+  (accumulate (lambda (this-coeff higher-terms) (* (+ this-coeff higher-terms)
+                                                   x))
+              0
+              coefficient-sequence))
+
+(horner-eval 2 (list 0 1 2))
