@@ -842,3 +842,111 @@ a
               coefficient-sequence))
 
 (horner-eval 2 (list 0 1 2))
+
+(define (count-leaves t)
+  (accumulate (lambda (x y) (+ y 1)) 0 (fringe t)))
+
+(count-leaves (list 4 (list 3 (list (list 5 6) 7))))
+
+(define (accumulate-n op init seqs)
+  (if (null? (car seqs)) '()
+    (cons (accumulate op init (map car seqs))
+          (accumulate-n op init (map cdr seqs)))))
+
+(accumulate-n + 0 (list (list 1 2 3)
+                        (list 4 5 6)
+                        (list 7 8 9)
+                        (list 10 11 12)))
+
+(define (dot-product v w)
+  (accumulate + 0 (map * v w)))
+
+(dot-product (list 1 2 3)
+             (list 1 2 3))
+
+(define (matrix-*-vector m v)
+  (map (lambda (x) (dot-product x v)) m))
+
+(matrix-*-vector (list (list 1 2 3 4) (list 4 5 6 6) (list 7 8 9 10))
+                 (list 1 2 3 4))
+
+(define (transpose m)
+  (accumulate-n cons '() m))
+
+
+(transpose (list (list 1 2 3) (list 4 5 6) (list 7 8 9)))
+
+(define (matrix-*-matrix m n)
+  (let ((cols (transpose n)))
+    (map (lambda (x) (matrix-*-vector cols x)) m)))
+
+(matrix-*-matrix (list (list 1 1) (list 1 1))
+                 (list (list 1 1) (list 1 0)))
+
+(define (fl op initial seq)
+  (define (iter result rest)
+    (if (null? rest) result
+      (iter (op result (car rest))
+            (cdr rest))))
+  (iter initial seq))
+
+(accumulate / 1 (list 1 2 3))
+
+(/ 3 (/ 2 (/ 1)))
+
+(fl / 1 (list 1 2 3)) 
+
+(/ 1 (/ 2 (/ 3)))
+
+(accumulate list '() (list 1 2 3))
+
+(fl list '() (list 1 2 3))
+
+(define (r seq)
+  (accumulate (lambda (x y) (append y (list x))) '() seq))
+
+(r (list 1 2 3))
+
+(define (lr seq)
+  (fl (lambda (x y) (cons y x)) '() seq))
+
+(lr (list 1 2 3))
+
+(define (flatmap proc seq)
+  (accumulate append '() (map proc seq)))
+
+(define (enumerate-interval n i)
+  (define (enum x accum)
+    (if (= x i) accum
+      (enum (- x 1) (cons x accum))))
+  (enum (- n 1) '()))
+
+(enumerate-interval 8 5)
+
+(define (unique-pairs n)
+  (flatmap (lambda (i)
+               (map 
+                 (lambda (x) (list i x)) 
+                 (enumerate-interval i)))
+               (enumerate-interval n)))
+
+(flatmap (lambda (i) 
+   (map (lambda (x) (list i x)) (enumerate-interval i))) 
+ (list 1 2))
+
+(unique-pairs 7)
+
+(define (triples n target)
+  (filter (lambda (x) (= (accumulate + 0 x) target)) (combos n 3)))
+
+(define (combos n d)
+  (define (f m accum)
+    (if (= m 1) accum
+        (f (- m 1) 
+           (flatmap (lambda (x)
+                      (map (lambda (y) (cons y x)) 
+                           (enumerate-interval n (car x))))
+                    accum))))
+  (map reverse (f d (map list (enumerate-interval n 0)))))
+
+(triples 6 9)
