@@ -950,3 +950,147 @@ a
   (map reverse (f d (map list (enumerate-interval n 0)))))
 
 (triples 6 9)
+
+(define (queens board-size)
+  (define (queen-cols k)  
+    (if (= k 0)
+      (list empty-board)
+      (filter
+        (lambda (positions) (safe? k positions))
+        (flatmap
+          (lambda (rest-of-queens)
+            (map (lambda (new-row)
+                   (adjoin-position new-row k rest-of-queens))
+                 (enumerate-interval (+ 1 board-size) 0)))
+          (queen-cols (- k 1))))))
+  (queen-cols board-size))
+
+(define empty-board '())
+
+(queens 8)
+
+; --------------------
+;4    |    |  x |
+; --------------------
+;3 x  |    |    |
+; --------------------
+;2    |    |    |  x
+; --------------------
+;1    | x  |    |
+; --------------------
+;  1   2    3    4
+
+(safe? 4 (list (cons 1 3) (cons 2 1) (cons 3 4) (cons 4 2)))
+
+(define (in? l a)
+  (cond ((null? l) (= 1 2))
+        ((pair? l) (or (in? (car l) a) (in? (cdr l) a)))
+        (else (= l a))))
+
+(in? (list 1 2) 1)
+
+(define (adjoin-position new-row k rest-of-queens)
+  (cons (cons k new-row) rest-of-queens))
+
+(define (safe? i j)
+  (define (s? k positions)
+    (cond ((null? positions) (= 1 1))
+          ((or (in? (map car positions) (car k))
+               (in? (map cdr positions) (cdr k)))
+           (= 1 2))
+          ((diagonal-safe? k positions) 
+           (= 1 1))
+          (else #f)))
+  (s? (car j) (cdr j)))
+
+(define (diagonal-safe? k positions)
+  (cond ((null? positions) (= 1 1))
+        ((null? (car positions)) (= 1 2))
+        ((= (abs (- (car k) (caar positions)))
+            (abs (- (cdr k) (cdar positions))))
+         #f)
+        (else (diagonal-safe? k (cdr positions)))))
+
+(safe? (cons 1 1) (list (cons 2 5) (cons 3 7)))
+
+(define test (list (cons 3 0) (cons 2 1) (cons 1 2) (cons 0 3)))
+
+(define y (safe? 0 test))
+
+(cons y y)
+
+(if #f 7 8)
+
+j
+
+(require (planet "sicp.ss" ("soegaard" "sicp.plt" 2 1)))
+
+(paint einstein)
+
+(define (up-split painter n)
+  (if (= n 0) painter
+    (let ((up (up-split painter (- n 1))))
+      (above painter (above up up)))))
+
+(define (split first after)
+  (define (f painter n)
+    (if (= n 0) painter
+      (let ((rest (f painter (- n 1))))
+        (first painter (after rest rest)))))
+  f)
+
+(define (make-vect x y)
+  (cons x y))
+(define (xcor-vect v)
+  (car v))
+(define (ycor-vect v)
+  (cdr v))
+(define (scale-vect v s)
+  (make-vect (* (xcor-vect v) s) (* (ycor-vect v) s)))
+(define (add-vect v y)
+  (make-vect (accumulate + 0 (map xcor-vect (list v y)))
+             (accumulate + 0 (map ycor-vect (list v y)))))
+(define (sub-vect v y)
+  (make-vect (- (xcor-vect v) (xcor-vect y))
+             (- (ycor-vect v) (ycor-vect y))))
+
+(add-vect (make-vect 3 2) (make-vect 4 5))
+
+(sub-vect (make-vect 5 5) (make-vect 1 1))
+
+(scale-vect (make-vect 4 3) 7)
+
+(define (make-frame origin v1 v2)
+  (list origin v1 v2))
+(define (get-o f)
+  (car f))
+(get-o (make-frame (make-vect 1 2) (make-vect 3 4) (make-vect 5 6)))
+(define (get-v1 f)
+  (cadr f))
+(get-v1 (make-frame (make-vect 1 2) (make-vect 3 4) (make-vect 5 6)))
+(define (get-v2 f)
+  (caddr f))
+(get-v2 (make-frame (make-vect 1 2) (make-vect 3 4) (make-vect 5 6)))
+
+(define (make-frame o v1 v2)
+  (cons o (cons v1 v2)))
+(make-frame (make-vect 1 2) (make-vect 3 4) (make-vect 5 6))
+(define (get-o f)
+  (car f))
+(get-o (make-frame (make-vect 1 2) (make-vect 3 4) (make-vect 5 6)))
+(define (get-v1 f)
+  (cadr f))
+(get-v1 (make-frame (make-vect 1 2) (make-vect 3 4) (make-vect 5 6)))
+(define (get-v2 f)
+  (cddr f))
+(get-v2 (make-frame (make-vect 1 2) (make-vect 3 4) (make-vect 5 6)))
+
+(define (make-segment v1 v2)
+  (cons v1 v2))
+(make-segment (make-vect 1 2) (make-vect 2 3))
+(define (start-segment segment)
+  (car segment))
+(start-segment (make-segment (make-vect 1 2) (make-vect 2 3)))
+(define (end-segment segment)
+  (cdr segment))
+(end-segment (make-segment (make-vect 1 2) (make-vect 2 3)))
