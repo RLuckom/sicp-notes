@@ -1094,3 +1094,110 @@ j
 (define (end-segment segment)
   (cdr segment))
 (end-segment (make-segment (make-vect 1 2) (make-vect 2 3)))
+
+(list 'a 'b 'c)
+
+(list (list 'george))
+
+(cdr '((x1 x2) (y1 y2)))
+
+(pair? (car '(a short list)))
+
+(memq 'red '((red shoes) (blue socks)))
+
+(memq 'red '(red shoes blue socks))
+
+(define (e? l1 l2)
+  (cond ((and (null? l1) (null? l2)) #t)
+        ((eq? (car l1) (car l2)) (e? (cdr l1) (cdr l2)))
+        (else #f)))
+
+(e? '(this is a list) '(this is a list))
+
+(e? '(this is a list) '(this (is a) list))
+
+(define (deriv ex var)
+  (cond ((number? ex) 0)
+        ((var? ex) (if (same-var? ex var) 1 0))
+        ((sum? ex) (make-sum (deriv (addend ex) var)
+                             (deriv (augend ex) var)))
+        ((product? ex) (make-sum
+                         (make-product
+                           (deriv (multiplier ex) var)
+                           (multiplicand ex))
+                         (make-product
+                          (deriv (multiplicand ex) var)
+                          (multiplier ex))))
+        ((exp? ex) (make-exp (make-product (mantissa ex)
+                                           (exponent ex))
+                             (make-sum (exponent ex) -1)))
+        (else (error "unknown expression type" ex))))
+
+(define (var? x) (symbol? x))
+(var? 'c)
+(var? 6)
+
+(define (same-var? x y)
+  (and (var? x) (variable? y) (eq? x y)))
+(same-var? 'c 'c)
+(same-var? 5 5)
+
+(define (make-sum a1 a2)
+  (cond ((=number? a1 0) a2)
+        ((=number? a2 0) a1)
+        ((and (number? a1) (number? a2)) (+ a1 a2))
+        (else (list '+ a1 a2))))
+(make-sum 4 5)
+
+(define (=number? ex num)
+  (and (number? ex) (= ex num)))
+(=number? 'l 8)
+(=number? 7 7)
+
+(define (make-product a1 a2)
+  (cond ((or (=number? a1 0) (=number? a2 0)) 0)
+        ((=number? a1 1) a2)
+        ((=number? a2 1) a1)
+        ((and (number? a1) (number? a2)) (* a1 a2))
+        (else (list '* a1 a2))))
+(make-product 4 5)
+
+(define (addend s) (cadr s))
+(addend (make-sum 8 7))
+
+(define (augend s) (caddr s))
+(augend (make-sum 8 7))
+
+(define (sum? ex)
+  (eq? (car ex) '+))
+(sum? (make-sum 4 5))
+
+(define (product? ex)
+  (eq? (car ex) '*))
+(product? (make-product 4 5))
+
+(define (multiplier p)
+  (cadr p))
+(multiplier (make-product 9 8))
+
+(define (multiplicand p)
+  (caddr p))
+(multiplicand (make-product 5 6))
+
+(deriv '(+ x 3) 'x)
+(deriv '(* x y) 'x)
+
+(define (make-exp k l)
+  (cond ((=number? l 1) k)
+        ((=number? l 0) 1)
+        (else (list '** k l))))
+(define (exp? ex)
+  (eq? (car ex) '**))
+(exp? (make-exp 8 9))
+
+(define (mantissa ex)
+  (cadr ex))
+(define (exponent ex)
+  (caddr ex))
+
+(deriv '(** x 3) 'x)
