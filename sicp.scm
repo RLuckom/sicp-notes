@@ -1190,9 +1190,10 @@ j
 (define (make-exp k l)
   (cond ((=number? l 1) k)
         ((=number? l 0) 1)
+        ((and (number? k) (number? l)) (fast-expt k l))
         (else (list '** k l))))
 (define (exp? ex)
-  (eq? (car ex) '**))
+  (and (pair? ex) (eq? (car ex) '**)))
 (exp? (make-exp 8 9))
 
 (define (mantissa ex)
@@ -1201,3 +1202,136 @@ j
   (caddr ex))
 
 (deriv '(** x 3) 'x)
+
+(define (resolve l)
+  (define (f left right method)
+    (if (null? right) left
+      (f (method left (resolve (car right)))
+         (cdr right) method)))
+  (cond ((or (number? l) (symbol? l)) l)
+         ((product? l) (f 
+                         (resolve (multiplier l)) 
+                         (multiplicand l) make-product))
+         ((sum? l) (f  
+                     (resolve (addend l)) 
+                     (augend l) make-sum))
+         ((exp? l) (make-exp (resolve (mantissa l)) 
+                             (resolve (exponent l))))))
+
+(resolve '(** (* 6 (** 8 3) x y) 2))
+
+(resolve '((6 * ((8 ** 3) * (1  * 1))) ** 2))
+
+(resolve '(7 * 8 9))
+
+(resolve 
+
+(caddr '(6 * 7))
+
+(resolve '(2 ** 2))
+
+(define (addend s) (car s))
+(addend (make-sum 'y 't))
+
+(define (augend s) (cddr s))
+(augend (make-sum 'l 'k))
+
+(define (sum? ex)
+  (eq? (cadr ex) '+))
+(sum? '(7 + 9))
+
+(define (product? ex)
+  (eq? (cadr ex) '*))
+(product? (make-product 'i 'y))
+
+(define (multiplier p)
+  (car p))
+(multiplier (make-product 'k 'l))
+
+(define (multiplicand p)
+  (cddr p))
+(define (make-sum a1 a2)
+  (cond ((=number? a1 0) a2)
+        ((=number? a2 0) a1)
+        ((and (number? a1) (number? a2)) (+ a1 a2))
+        (else (list a1 '+ a2))))
+(make-sum 'a 'b)
+(define (=number? ex num)
+  (and (number? ex) (= ex num)))
+(=number? 'l 8)
+(=number? 7 7)
+(define (make-product a1 a2)
+  (cond ((or (=number? a1 0) (=number? a2 0)) 0)
+        ((=number? a1 1) a2)
+        ((=number? a2 1) a1)
+        ((and (number? a1) (number? a2)) (* a1 a2))
+        (else (list a1 '* a2))))
+(make-product 4 5)
+
+(define (make-exp k l)
+  (cond ((=number? l 1) k)
+        ((=number? l 0) 1)
+        ((and (number? k) (number? l)) (fast-expt k l))
+        (else (list k '** l))))
+(define (exp? ex)
+  (and (pair? ex) (eq? (cadr ex) '**)))
+(exp? (make-exp 'l 'k))
+
+(define (mantissa ex)
+  (car ex))
+(mantissa (make-exp 'h 'j))
+
+(define (exponent ex)
+  (cddr ex))
+
+(define (element-of-set? a s)
+  (cond ((null? s) #f)
+        ((equal? a (car s)) #t)
+        (else (element-of-set? a (cdr s)))))
+
+(define (intersection-set s t)
+  (define (u g h a)
+    (cond ((null? g) a)
+          ((and (not (element-of-set? (car g) a))
+                (element-of-set? (car g) h))
+           (u (cdr g) h (cons (car g) a)))
+          (else (u (cdr g) h a))))
+  (u s t '()))
+
+
+(define (union-set s t)
+  (define (u g a)
+    (cond ((null? g) a)
+          ((not (element-of-set? (car g) a))
+           (u (cdr g) (cons (car g) a)))
+          (else (u (cdr g) a))))
+  (u s t))
+
+(union-set '(g h t) '(u y t))
+
+(define (adjoin-set s a)
+  (cons a s))
+(adjoin-set '(8 b 6) 6)
+
+(define (union s1 s2)
+  (append s1 s2))
+(union '(7 7 7 6 6) '(5 6 6 7 7))
+
+
+(define (intersection-set s t)
+  (define (u g h a)
+    (cond ((null? g) a)
+          ((element-of-set? (car g) h)
+           (u (cdr g) h (cons (car g) a)))
+          (else (u (cdr g) h a))))
+  (u s t '()))
+(intersection-set '(8 7 6 6) '(4 4 6 6 7 7))
+
+(define (ord-int a b)
+  (define (oi s1 s2 a)
+    (cond ((or (null? s1) (null? s2)) a)
+          ((< (car s1) (car s2)) (oi (cdr s1) s2 a))
+          ((> (car s1) (car s2)) (oi s1 (cdr s2) a))
+          ((= (car s1) (car s2)) (oi (cdr s1) (cdr s2) (cons (car s1) a)))))
+  (oi a b '()))
+(ord-int '(1 3 5 6 7) '(2 4 6 7 9))
