@@ -1335,3 +1335,128 @@ j
           ((= (car s1) (car s2)) (oi (cdr s1) (cdr s2) (cons (car s1) a)))))
   (oi a b '()))
 (ord-int '(1 3 5 6 7) '(2 4 6 7 9))
+
+(define (ord-adjoin S E)
+  (define (oa s e a)
+    (cond ((null? s) (append a (list e)))
+          ((= (car s) e) (append a s))
+          ((> (car s) e) (append a (list e) s))
+          (else (oa (cdr s) e (append a (list (car s)))))))
+  (oa S E '()))
+
+(ord-adjoin '(1 2 3 5) 6)
+
+(define (ord-union S1 S2)
+  (define (ou s1 s2 a)
+    (cond ((null? s1) (append a s2))
+          ((null? s2) (append a s1))
+          ((> (car s1) (car s2)) (ou s1 (cdr s2) (append a (list (car s2)))))
+          ((< (car s1) (car s2)) (ou s2 (cdr s1) (append a (list (car s1)))))
+          (else (ou (cdr s1) (cdr s2) (append a (list (car s1)))))))
+  (ou S1 S2 '()))
+
+(ord-union '(1 3 5 7 9) '(-5 -4 -3 -2 -1 0))
+
+(define (left-branch tree)
+  (cadr tree))
+(define (entry tree)
+  (car tree))
+(define (right-branch tree)
+  (caddr tree))
+(define (make-node entry left right)
+  (list entry left right))
+
+(quotient 2 1)
+
+
+(tree-list1 (list 5 (list 2 (list 1 '() '()) (list 3 '() '())) (list 7 (list 6 '() '()) (list 9 (list 8 '() '()) '()))))
+
+(define (make-tree elements)
+  (define (tree-help elem num)
+    (if (= 0 num) (cons '() elem)
+      (let ((h (quotient ( - num 1) 2)))
+        (let ((f (tree-help elem h)))
+          (let ((l (car f))
+;                (h (newline))
+;                (v (display (cons 'f f)))
+                (e (cadr f))
+                (s (tree-help (cddr f) (- num (+ h 1)))))
+            (let ((r (car s))
+                  (rest (cdr s)))
+          (cons (make-node e l r) rest)))))))
+  (car (tree-help elements (length elements))))
+
+(make-tree (list 1 2 3 4 5 6))
+
+(define two-16-1 (list 7 (list 3 (list 1 '() '()) (list 5 '() '())) 
+                       (list 9 '() (list 11 '() '()))))
+
+two-16-1
+
+(define two-16-2 (list 3 
+                       (list 1 '() '()) 
+                       (list 7 
+                             (list 5 
+                                   '() 
+                                   '())
+                             (list 9 
+                                   '() 
+                                   (list 11 
+                                         '() 
+                                         '())))))
+
+(define two-16-3 (list 5 (list 3 (list 1 '() '()) '())
+                       (list 9 (list 7 '() '()) (list 11 '() '())))) 
+
+
+(define (tree-list1 tree)
+  (if (null? tree)
+    '()
+    (append (tree-list1 (left-branch tree))
+            (cons (entry tree)
+                  (tree-list1 (right-branch tree))))))
+
+(define (tree-list2 tree)
+  (define (copy-to-list tree result-list)
+    (if (null? tree) result-list
+      (copy-to-list (left-branch tree)
+                    (cons (entry tree)
+                          (copy-to-list (right-branch tree) result-list)))))
+  (copy-to-list tree '()))
+
+(tree-list1 two-16-1)
+(tree-list2 two-16-1)
+(tree-list1 two-16-2)
+(tree-list2 two-16-2)
+(tree-list1 two-16-3)
+(tree-list2 two-16-3)
+
+(define (n-union s1 s2)
+  (define (ordl-union l1 l2)
+    (cond ((and (null? l1) (null? l2)) '())
+          ((null? l1) l2)
+          ((null? l2) l1)
+          ((< (car l1) (car l2)) (cons (car l1) (ordl-union (cdr l1) l2)))
+          ((> (car l1) (car l2)) (cons (car l2) (ordl-union (cdr l2) l1)))
+          (else (cons (car l1) (ordl-union (cdr l1) (cdr l2))))))
+  (make-tree (ordl-union (tree-list2 s1) (tree-list2 s2))))
+
+(define (n-intersect s1 s2)
+  (define (ordl-intersect l1 l2)
+    (cond ((or (null? l1) (null? l2)) '())
+          ((< (car l1) (car l2)) (ordl-intersect (cdr l1) l2))
+          ((> (car l1) (car l2)) (ordl-intersect (cdr l2) l1))
+          (else (cons (car l1) (ordl-intersect (cdr l1) (cdr l2))))))
+  (make-tree (ordl-intersect (tree-list2 s1) (tree-list2 s2))))
+
+(tree-list2 (n-intersect (make-tree (list 1 3 5)) (make-tree (list 2 3 6))))
+
+(make-tree (list 1 3 5))
+
+(define (lookup key set)
+  (cond ((null? set) #f)
+        ((= key (entry set)) (entry set))
+        ((< key (entry set)) (lookup key (left-branch set)))
+        ((> key (entry set)) (lookup key (right-branch set)))))
+(lookup 2 (make-tree (list 1 2 3 4 5 6)))
+(lookup 7 (make-tree (list 1 2 3 4 5 6)))
