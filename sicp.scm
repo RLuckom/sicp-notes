@@ -1460,3 +1460,104 @@ two-16-1
         ((> key (entry set)) (lookup key (right-branch set)))))
 (lookup 2 (make-tree (list 1 2 3 4 5 6)))
 (lookup 7 (make-tree (list 1 2 3 4 5 6)))
+
+(define (make-leaf symbol weight)
+  (list 'leaf symbol weight))
+(define (leaf? node)
+  (eq? (car node) 'leaf))
+(define (leaf-weight leaf)
+  (caddr leaf))
+(define (leaf-symbol leaf)
+  (cadr leaf))
+
+(define (symbols tree)
+  (if (leaf? tree) (list (leaf-symbol tree))
+    (caddr tree)))
+(define (weight tree)
+  (if (leaf? tree) (leaf-weight tree)
+    (cadddr tree)))
+(define (make-h-tree left right)
+  (list left
+        right
+        (append (symbols left) (symbols right))
+        (+ (weight left) (weight right))))
+(define (right-branch tree) (cadr tree))
+(define (left-branch tree) (car tree))
+
+(define (decode code tree)
+  (define (dh c t)
+    (cond ((null? c) '())
+          ((leaf? t) (cons (leaf-symbol t) (dh c tree)))
+          ((= 0 (car c)) (dh (cdr c) (left-branch t)))
+          ((= 1 (car c)) (dh (cdr c) (right-branch t)))))
+  (dh code tree))
+
+(define sample-tree (make-h-tree (make-leaf 'a 4)
+                                 (make-h-tree (make-leaf 'B 2)
+                                              (make-h-tree (make-leaf 'd 1)
+                                                           (make-leaf 'c 1)))))
+
+(define sample-message '(0 1 1 0 0 1 0 1 0 1 1 1 0 ))
+
+(left-branch sample-tree)
+
+(decode sample-message sample-tree)
+
+(define (decode2 bits tree)
+  (define (d bits current-branch)
+    (if (null? bits) '()
+      (let ((next-branch (choose-branch (car bits) current-branch)))
+        (if (leaf? next-branch) (cons (leaf-symbol next-branch)
+                                      (d (cdr bits) tree))
+          (d (cdr bits) next-branch)))))
+  (d bits tree))
+
+(define (choose-branch bit branch)
+  (cond ((= bit 0) (left-branch branch))
+        ((= bit 1) (right-branch branch))))
+
+(decode2 sample-message sample-tree)
+
+(define (s-in? l s)
+  (cond ((null? l) #f)
+        ((pair? l) (or (s-in? (car l) s) (s-in? (cdr l) s)))
+        (else (eq? l s))))
+
+(s-in? '(l k h g f) ')
+
+
+(define (adjoin-set x set)
+  (cond ((null? set) (list x))
+        ((< (weight x) (weight (car set))) (cons x set))
+        (else (cons (car set)
+                    (adjoin-set x (cdr set))))))
+(define (make-leaf-set pairs)
+  (if (null? pairs) '()
+  (let ((pair (car pairs)))
+    (adjoin-set (make-leaf (car pair)
+                           (cadr pair))
+                (make-leaf-set (cdr pairs))))))
+
+(define (encode-symbol s tree)
+  (define (ec s t)
+    (cond ((leaf? t) '())
+          ((not (s-in? (symbols t) s)) '(Error))
+          ((s-in? (symbols (left-branch t)) s)
+                  (cons 0 (ec s (left-branch t))))
+          ((s-in? (symbols (right-branch t)) s) 
+                  (cons 1 (ec s (right-branch t))))))
+  (ec s tree))
+
+(define (huff-tree pairs)
+  (successive-merge (make-leaf-set pairs)))
+
+(define (successive-merge leaf-set)
+  (if (null? (cdr leaf-set)) leaf-set
+    (successive-merge (cons (make-h-tree (car leaf-set) (cadr leaf-set))
+                            (cddr leaf-set)))))
+
+(huff-tree '((a 1) (b 1) (c 2) (d 3)))
+
+(encode-symbol 'd sample-tree)
+
+(s-in? 'a (symbols sample-tree))
